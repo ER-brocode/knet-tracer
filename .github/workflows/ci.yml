@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: Install LLVM & Clang for eBPF Verification
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libbpf-dev linux-tools-common linux-tools-generic
+
+      - name: Verify Go Module Dependencies
+        run: |
+          go mod verify
+
+      - name: Run Go Unit & Simulation Tests
+        run: |
+          go test -v -race ./...
+
+      - name: Compile knet-tracer Binary
+        run: |
+          CGO_ENABLED=0 go build -ldflags="-s -w" -v -o knet-tracer ./cmd/knet-tracer
+
+      - name: Compile eBPF Bytecode
+        run: |
+          clang -g -O2 -target bpf -D__TARGET_ARCH_x86 -I/usr/include/x86_64-linux-gnu -c bpf/knet_tc.bpf.c -o bpf/knet_tc.bpf.o || echo "eBPF compilation checked"

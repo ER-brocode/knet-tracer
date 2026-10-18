@@ -1,0 +1,12 @@
+listen_addr: ":9102"
+otlp_endpoint: ""
+flow_ttl_seconds: 300
+prune_interval_seconds: 30
+simulation_mode: false
+
+ebpf:
+  ringbuf_size_mb: 16
+  track_tcp_rtt: true
+  track_packet_drops: true
+  track_socket_stats: true
+  rate_limit_drops_us: 50
